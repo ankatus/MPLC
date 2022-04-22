@@ -1,0 +1,12 @@
+while asdf or and    
+return assert lhöarthjad
+123asdf 123456789
+asdf "this is a string" 
+"
+this is a multiline string
+" {* this is a comment
+that spans multiple lines **** }}}* *}anIdentifier
+>+=>=..;:<
+><>([]):=:
+.123 0.5 5.5.5 0.
+123.4 10.123e-500 0.5e+25 1.1e123
