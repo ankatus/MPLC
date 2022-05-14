@@ -528,15 +528,12 @@ public class Generator
 
     private static string GetSize(AstSizeExpr sizeExpr)
     {
-        if (sizeExpr.Type is not AstArrayType arrayType)
-            return $"sizeof({GetCType(sizeExpr.Type)});";
-
         if (sizeExpr.Factor is AstVariable arrayVariable)
         {
-            return $"{arrayVariable.Identifier}.size;";
+            return $"{arrayVariable.Identifier}.size";
         }
 
-        return $"{arrayType.Size};";
+        return "1;";
     }
 
     private static string GetCType(AstType type)
