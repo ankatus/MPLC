@@ -1,0 +1,11 @@
+- expressionit !!!
+
+- var-parametrit
+- proseduurit
+    - funktio VOID-returntypellä?
+- exceptionit
+    - tyypit
+    - viestit
+- predefined identifiers
+
+- parseri toimimaan CFGn mukaan?

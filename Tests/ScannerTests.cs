@@ -1,4 +1,3 @@
-using System;
 using NUnit.Framework;
 using System.Collections.Generic;
 using System.IO;
@@ -26,7 +25,7 @@ public class ScannerTests
     }
 
     [Test]
-    public void ValidTokensTest()
+    public void ScannerTest()
     {
         List<Token> expectedTokens = new()
         {
@@ -37,9 +36,9 @@ public class ScannerTests
             new Token(TokenType.KW_RETURN, "return", 2, 1),
             new Token(TokenType.KW_ASSERT, "assert", 2, 8),
             new Token(TokenType.IDENTIFIER, "lhöarthjad", 2, 15),
-            new Token(TokenType.NUMBER, "123", 3, 1),
+            new Token(TokenType.INTEGER, "123", 3, 1),
             new Token(TokenType.IDENTIFIER, "asdf", 3, 4),
-            new Token(TokenType.NUMBER, "123456789", 3, 9),
+            new Token(TokenType.INTEGER, "123456789", 3, 9),
             new Token(TokenType.IDENTIFIER, "asdf", 4, 1),
             new Token(TokenType.STRING, "this is a string", 4, 6),
             new Token(TokenType.STRING, "\nthis is a multiline string\n", 5, 1),
@@ -62,17 +61,17 @@ public class ScannerTests
             new Token(TokenType.KW_ASSIGN, ":=", 10, 8),
             new Token(TokenType.COLON, ":", 10, 10),
             new Token(TokenType.PERIOD, ".", 11, 1),
-            new Token(TokenType.NUMBER, "123", 11, 2),
-            new Token(TokenType.NUMBER, "0.5", 11, 6),
-            new Token(TokenType.NUMBER, "5.5", 11, 10),
+            new Token(TokenType.INTEGER, "123", 11, 2),
+            new Token(TokenType.INTEGER, "0.5", 11, 6),
+            new Token(TokenType.INTEGER, "5.5", 11, 10),
             new Token(TokenType.PERIOD, ".", 11, 13),
-            new Token(TokenType.NUMBER, "5", 11, 14),
-            new Token(TokenType.NUMBER, "0", 11, 16),
+            new Token(TokenType.INTEGER, "5", 11, 14),
+            new Token(TokenType.INTEGER, "0", 11, 16),
             new Token(TokenType.PERIOD, ".", 11, 17),
-            new Token(TokenType.NUMBER, "123.4", 12, 1),
-            new Token(TokenType.NUMBER, "10.123e-500", 12, 7),
-            new Token(TokenType.NUMBER, "0.5e+25", 12, 19),
-            new Token(TokenType.NUMBER, "1.1e123", 12, 27),
+            new Token(TokenType.INTEGER, "123.4", 12, 1),
+            new Token(TokenType.INTEGER, "10.123e-500", 12, 7),
+            new Token(TokenType.INTEGER, "0.5e+25", 12, 19),
+            new Token(TokenType.INTEGER, "1.1e123", 12, 27),
 
             
             

@@ -24,7 +24,7 @@ public class ScannerInput
     
     public ScannerInput(string input)
     {
-        _input = input;
+        _input = input.ToLower();
     }
 
     public void Advance()

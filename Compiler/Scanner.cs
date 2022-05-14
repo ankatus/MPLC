@@ -7,8 +7,6 @@ public enum TokenType
     CLOSE_PARENS,
     OPEN_SQUARE,
     CLOSE_SQUARE,
-    OPEN_CURLY,
-    CLOSE_CURLY,
     LESS_THAN,
     LESS_THAN_OR_EQ,
     GREATER_THAN,
@@ -20,9 +18,9 @@ public enum TokenType
     COLON,
     SEMICOLON,
     IDENTIFIER,
-    NUMBER,
+    INTEGER,
+    REAL,
     STRING,
-    BOOL,
 
     OP_ADD,
     OP_SUB,
@@ -56,7 +54,6 @@ public enum TokenType
 public record Token(TokenType Type, string Lexeme, int Line, int Col)
 {
     public static Token Eof => new(TokenType.EOF, "", 0, 0);
-    public string PosString => $"line {Line}, col {Col}";
 }
 
 public class Scanner
@@ -123,7 +120,7 @@ public class Scanner
 
             if (TryBuildRealWithExponent())
             {
-                AddToken(TokenType.NUMBER);
+                AddToken(TokenType.REAL);
                 _input.Commit();
                 continue;
             }
@@ -132,7 +129,7 @@ public class Scanner
             
             if (TryBuildReal())
             {
-                AddToken(TokenType.NUMBER);
+                AddToken(TokenType.REAL);
                 _input.Commit();
                 continue;
             }
@@ -141,7 +138,7 @@ public class Scanner
             
             if (TryBuildInteger())
             {
-                AddToken(TokenType.NUMBER);
+                AddToken(TokenType.INTEGER);
                 _input.Commit();
                 continue;
             }
