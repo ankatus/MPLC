@@ -251,6 +251,11 @@ public class Parser
 
         while (NextToken.Type is not TokenType.KW_END)
         {
+            children.Add(ConsumeToTerminal(TokenType.SEMICOLON));
+            
+            if (NextToken.Type is TokenType.KW_END)
+                break;
+            
             children.Add(ParseStatement());
         }
 
@@ -299,7 +304,6 @@ public class Parser
                 {Type: TokenType.KW_RETURN} => ParseReturn(),
                 _ => throw new InvalidOperationException(""),
             },
-            ConsumeToTerminal(TokenType.SEMICOLON),
         };
 
         var node = new PtNonTerminal(NonTerminalType.SIMPLE_STATEMENT, children);
