@@ -431,6 +431,9 @@ public class Generator
             operators.Add(GetCOperator(term.op));
         }
 
+        if (simpleExpression.Type == AstType.String)
+            throw new NotImplementedException("String operations are not supported, sorry!\n(This means you tried to concatenate strings somewhere.)");
+        
         var type = GetCType(simpleExpression.Type);
         var valueName = GetVarName();
 
