@@ -47,6 +47,8 @@ public enum TokenType
     KW_AND,
     KW_NOT,
     KW_ASSIGN,
+    KW_TRUE,
+    KW_FALSE,
 
     EOF,
 }
@@ -79,6 +81,8 @@ public class Scanner
         {"program", TokenType.KW_PROGRAM},
         {"assert", TokenType.KW_ASSERT},
         {"return", TokenType.KW_RETURN},
+        {"true", TokenType.KW_TRUE},
+        {"false", TokenType.KW_FALSE},
     };
 
     private readonly ScannerInput _input;

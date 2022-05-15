@@ -64,6 +64,7 @@ public class AstType : AstNode
 
     public static AstType Int => new(AstTypeName.INTEGER);
     public static AstType String => new(AstTypeName.STRING);
+    public static AstType Bool => new(AstTypeName.BOOL);
 
     public static bool operator !=(AstType a, AstType b)
     {

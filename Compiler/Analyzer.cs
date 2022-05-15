@@ -833,6 +833,10 @@ public class Analyzer
                         out var floatValue))
                     throw new InvalidOperationException();
                 return new AstLiteral(new(AstTypeName.REAL), floatValue);
+            case TokenType.KW_TRUE:
+                return new AstLiteral(new(AstTypeName.BOOL), true);
+            case TokenType.KW_FALSE:
+                return new AstLiteral(new(AstTypeName.BOOL), false);
             default:
                 throw new InvalidOperationException();
         }

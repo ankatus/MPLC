@@ -644,7 +644,7 @@ public class Parser
 
     private PtNode ParseLiteral()
     {
-        if (NextToken.Type is TokenType.INTEGER or TokenType.STRING or TokenType.REAL)
+        if (NextToken.Type is TokenType.INTEGER or TokenType.STRING or TokenType.REAL or TokenType.KW_TRUE or TokenType.KW_FALSE)
         {
             return new PtNonTerminal(NonTerminalType.LITERAL, new List<PtNode>
             {
@@ -706,7 +706,7 @@ public class Parser
 
     private static bool IsLiteralStartToken(Token token)
     {
-        return token.Type is TokenType.INTEGER or TokenType.STRING or TokenType.REAL;
+        return token.Type is TokenType.INTEGER or TokenType.STRING or TokenType.REAL or TokenType.KW_FALSE or TokenType.KW_TRUE;
     }
 
     private static bool IsVariableStartToken(Token token)

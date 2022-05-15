@@ -447,6 +447,9 @@ public class Generator
         if (literal.Type == AstType.String)
             asString = $"\"{asString}\"";
 
+        if (literal.Type == AstType.Bool)
+            asString = asString.ToLower();
+        
         return ("", asString);
     }
 
