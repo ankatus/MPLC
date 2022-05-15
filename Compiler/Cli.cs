@@ -43,7 +43,10 @@ public static class Cli
         {
             Console.WriteLine($"Error during parsing:\n{e.Message}");
         }
-        
+        catch (SemanticException e)
+        {
+            Console.WriteLine($"Error during semantic analysis:\n{e.Message}");
+        }
         
     }
 }

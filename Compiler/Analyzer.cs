@@ -23,7 +23,7 @@ public class Analyzer
     private AstProgram AnalyzeProgram(PtNode node)
     {
         if (node is not PtNonTerminal programNode)
-            throw new ArgumentException("", nameof(node));
+            throw new InvalidOperationException();
 
         var nonTerminals =
             programNode.Children.OfType<PtNonTerminal>()
@@ -139,10 +139,15 @@ public class Analyzer
 
         var context = new Dictionary<string, (AstType type, bool isRef)>();
 
-        if (parameters.Any(parameter =>
-                !context.TryAdd(parameter.Name, (parameter.Type, parameter.IsRef))))
+        foreach (var parameter in parameters)
         {
-            throw new SemanticException("");
+            if (!context.TryAdd(parameter.Name, (parameter.Type, parameter.IsRef)))
+            {
+                var token = GetNodeStartToken(functionNode);
+                throw new SemanticException(
+                    $"At line {token.Line}, column {token.Col}: " +
+                    $"Duplicate parameter name \"{parameter.Name}\" in declaration of function \"{id}\".");
+            }
         }
 
         _contextStack.Add(context);
@@ -163,7 +168,7 @@ public class Analyzer
             throw new InvalidOperationException();
 
         var parameters = new List<Parameter>();
-        
+
         for (var i = 0; i < parametersNode.Children.Count;)
         {
             var current = parametersNode.Children[i];
@@ -189,7 +194,7 @@ public class Analyzer
                 i++;
             }
         }
-        
+
         return parameters;
     }
 
@@ -214,10 +219,15 @@ public class Analyzer
 
         var context = new Dictionary<string, (AstType type, bool isRef)>();
 
-        if (parameters.Any(parameter =>
-                !context.TryAdd(parameter.Name, (parameter.Type, parameter.IsRef))))
+        foreach (var parameter in parameters)
         {
-            throw new SemanticException("");
+            if (!context.TryAdd(parameter.Name, (parameter.Type, parameter.IsRef)))
+            {
+                var token = GetNodeStartToken(procedureNode);
+                throw new SemanticException(
+                    $"At line {token.Line}, column {token.Col}: " +
+                    $"Duplicate parameter name \"{parameter.Name}\" in declaration of procedure \"{id}\".");
+            }
         }
 
         _contextStack.Add(context);
@@ -235,7 +245,7 @@ public class Analyzer
     private AstBlock AnalyzeBlock(PtNode node)
     {
         if (node is not PtNonTerminal blockNode)
-            throw new ArgumentException("", nameof(node));
+            throw new InvalidOperationException();
 
         var context = new Dictionary<string, (AstType type, bool isRef)>();
         _contextStack.Add(context);
@@ -254,7 +264,7 @@ public class Analyzer
     private AstStatement AnalyzeStatement(PtNode node)
     {
         if (node is not PtNonTerminal statementNode)
-            throw new ArgumentException("", nameof(node));
+            throw new InvalidOperationException();
 
         var child = statementNode
             .Children
@@ -265,7 +275,7 @@ public class Analyzer
         {
             NonTerminalType.SIMPLE_STATEMENT => AnalyzeSimpleStatement(child),
             NonTerminalType.STRUCTURED_STATEMENT => AnalyzeStructuredStatement(child),
-            _ => throw new SemanticException(""),
+            _ => throw new InvalidOperationException(),
         };
     }
 
@@ -288,7 +298,7 @@ public class Analyzer
             NonTerminalType.READ => AnalyzeRead(child),
             NonTerminalType.WRITE => AnalyzeWrite(child),
             NonTerminalType.ASSERT => AnalyzeAssert(child),
-            _ => throw new SemanticException(""),
+            _ => throw new InvalidOperationException(),
         };
     }
 
@@ -312,8 +322,17 @@ public class Analyzer
         );
 
         var context = _contextStack[^1];
-        if (ids.Any(id => !context.TryAdd(id, (type, false))))
-            throw new SecurityException("");
+
+        foreach (var id in ids)
+        {
+            if (!context.TryAdd(id, (type, false)))
+            {
+                var token = GetNodeStartToken(varDeclarationNode);
+                throw new SemanticException(
+                    $"At line {token.Line}, column {token.Col}: " +
+                    $"Duplicate variable name \"{id}\" (already used in this scope).");
+            }
+        }
 
         return new AstVarDeclaration(
             ids
@@ -341,7 +360,13 @@ public class Analyzer
         );
 
         if (variable.Type != expression.Type)
-            throw new SemanticException("");
+        {
+            var token = GetNodeStartToken(assignmentNode);
+            throw new SemanticException(
+                $"At line {token.Line}, column {token.Col}: " +
+                $"Type mismatch between variable ({variable.Type}) and expression ({expression.Type}) " +
+                $"in assignment of variable \"{variable.Identifier}\".");
+        }
 
         return new AstAssignment(variable, expression);
     }
@@ -366,18 +391,41 @@ public class Analyzer
             .Select(AnalyzeExpression)
             .ToList();
 
-        IAstCallable callee =
+        IAstCallable? callee =
             _functions.ContainsKey(id)
                 ? _functions[id]
                 : _procedures.ContainsKey(id)
                     ? _procedures[id]
-                    : throw new SemanticException("");
+                    : null;
+
+        if (callee is null)
+        {
+            var token = GetNodeStartToken(callStatementNode);
+            throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
+                                        $"Call to unknown function or procedure \"{id}\".");
+        }
 
         if (arguments.Count != callee.Parameters.Count)
-            throw new SemanticException("");
+        {
+            var token = GetNodeStartToken(callStatementNode);
+            throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
+                                        $"Incorrect amount of arguments in call to \"{id}\" " +
+                                        $"(expected {callee.Parameters.Count}, found {arguments.Count}).");
+        }
 
-        if (arguments.Where((t, i) => t.Type != callee.Parameters[i].Type).Any())
-            throw new SemanticException("");
+        for (var i = 0; i < arguments.Count; i++)
+        {
+            var arg = arguments[i];
+            var param = callee.Parameters[i];
+
+            if (arg.Type != param.Type)
+            {
+                var token = GetNodeStartToken(callStatementNode);
+                throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
+                                            $"Invalid argument type in call to \"{id}\". " +
+                                            $"The type of \"{param.Name}\" should be \"{param.Type}\", got \"{arg.Type}\" instead.");
+            }
+        }
 
         return new AstCallStatement(callee, arguments);
     }
@@ -440,7 +488,11 @@ public class Analyzer
 
         if (expression.Type.Name is not AstTypeName.BOOL ||
             expression.Type is AstArrayType)
-            throw new SemanticException("");
+        {
+            var token = GetNodeStartToken(assertNode);
+            throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
+                                        $"\"Assert\" requires an expression of type \"{AstTypeName.BOOL}\".");
+        }
 
         return new AstAssert(expression);
     }
@@ -511,7 +563,11 @@ public class Analyzer
 
         if (condition.Type is AstArrayType ||
             condition.Type.Name is not AstTypeName.BOOL)
-            throw new SemanticException("");
+        {
+            var token = GetNodeStartToken(whileNode);
+            throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
+                                        $"The condition for a while-loop must be of type \"{AstTypeName.BOOL}\".");
+        }
 
         var statement = AnalyzeStatement(
             whileNode.Children.OfType<PtNonTerminal>()
@@ -566,7 +622,11 @@ public class Analyzer
                 var sizeExpression = AnalyzeExpression(sizeExpressionNode);
 
                 if (sizeExpression.Type != AstType.Int)
-                    throw new SemanticException("");
+                {
+                    var token = GetNodeStartToken(typeNode);
+                    throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
+                                                $"The size expression for an array type must be of type \"{AstTypeName.INTEGER}\".");
+                }
 
                 return new AstArrayType(type, sizeExpression);
             default:
@@ -602,7 +662,7 @@ public class Analyzer
         PtNonTerminal relationExprNode)
     {
         if (relationExprNode.Children.Count != 3)
-            throw new ArgumentException("", nameof(relationExprNode));
+            throw new InvalidOperationException();
 
         var leftNode = relationExprNode.Children[0] as PtNonTerminal
                        ?? throw new InvalidOperationException();
@@ -616,7 +676,11 @@ public class Analyzer
         var right = AnalyzeSimpleExpression(rightNode);
 
         if (left.Type != right.Type)
-            throw new SemanticException("");
+        {
+            var token = GetNodeStartToken(relationExprNode);
+            throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
+                                        $"Both sides of a relational expression must have the same type.");
+        }
 
         return new AstRelationExpression(left, right, op);
     }
@@ -664,9 +728,22 @@ public class Analyzer
             var newExpr = AnalyzeExpression(simpleExprNode.Children[i + 1]);
 
             if (lastTerm.Type != newExpr.Type)
-                throw new SemanticException("");
+            {
+                var token = GetNodeStartToken(simpleExprNode.Children[i + 1]);
+                throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
+                                            $"All terms of an expression must have the same type.");
+            }
 
-            CheckOperatorType(newOp, newExpr.Type);
+            if (!CheckOperatorType(newOp, newExpr.Type))
+            {
+                var token = GetNodeStartToken(simpleExprNode.Children[i]);
+                if (newExpr.Type is AstArrayType)
+                    throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
+                                                $"Operator \"{newOp}\" can not be used with an array type.");
+
+                throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
+                                            $"Operator \"{newOp}\" can not be used with type \"{newExpr.Type.Name}\".");
+            }
 
             terms.Add((newOp, newExpr));
 
@@ -679,7 +756,7 @@ public class Analyzer
     private AstExpression AnalyzeFactor(PtNode node)
     {
         if (node is not PtNonTerminal factorNode)
-            throw new ArgumentException("", nameof(node));
+            throw new InvalidOperationException();
 
         var child = factorNode
             .Children
@@ -718,7 +795,11 @@ public class Analyzer
             .Lexeme;
 
         if (!_functions.TryGetValue(id, out var func))
-            throw new SemanticException("");
+        {
+            var token = GetNodeStartToken(callNode);
+            throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
+                                        $"Call to undefined function \"{id}\".");
+        }
 
         var arguments = callNode.Children
             .OfType<PtNonTerminal>()
@@ -746,7 +827,11 @@ public class Analyzer
 
         var foundVar = TryFindVar(identifier);
         if (foundVar is null)
-            throw new SemanticException("");
+        {
+            var token = GetNodeStartToken(variableNode);
+            throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
+                                        $"Use of undefined variable \"{identifier}\".");
+        }
 
         var expressionNode = variableNode
             .Children
@@ -757,8 +842,12 @@ public class Analyzer
             return new AstVariable(foundVar.Value.type, identifier, foundVar.Value.isRef);
 
         var expression = AnalyzeExpression(expressionNode);
-        if (expression.Type is AstArrayType || expression.Type.Name is not AstTypeName.INTEGER)
-            throw new SemanticException("");
+        if (expression.Type != AstType.Int)
+        {
+            var token = GetNodeStartToken(variableNode);
+            throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
+                                        $"Array indexer expression should be of type \"{AstTypeName.INTEGER}\".");
+        }
 
         return new AstArrayElement(new AstType(foundVar.Value.type.Name), identifier, expression);
     }
@@ -777,7 +866,7 @@ public class Analyzer
     private static AstOperator AnalyzeOperator(PtNode node)
     {
         if (node is not PtTerminal opNode)
-            throw new ArgumentException("", nameof(node));
+            throw new InvalidOperationException();
 
         return opNode.Token.Type switch
         {
@@ -850,12 +939,15 @@ public class Analyzer
             {Type: TokenType.IDENTIFIER, Lexeme: "string"} => AstTypeName.STRING,
             {Type: TokenType.IDENTIFIER, Lexeme: "real"} => AstTypeName.REAL,
             {Type: TokenType.IDENTIFIER, Lexeme: "boolean"} => AstTypeName.BOOL,
-            _ => throw new ArgumentException("", nameof(token)),
+            _ => throw new InvalidOperationException(),
         };
     }
 
-    private static void CheckOperatorType(AstOperator op, AstType type)
+    private static bool CheckOperatorType(AstOperator op, AstType type)
     {
+        if (type is AstArrayType)
+            return false;
+
         switch (op)
         {
             case AstOperator.ADD:
@@ -864,20 +956,19 @@ public class Analyzer
                     case AstTypeName.INTEGER:
                     case AstTypeName.REAL:
                     case AstTypeName.STRING:
-                        break;
+                        return true;
                     default:
-                        throw new SemanticException("");
+                        return false;
                 }
 
-                break;
             case AstOperator.DIV or AstOperator.MUL or AstOperator.SUB:
                 switch (type.Name)
                 {
                     case AstTypeName.INTEGER:
                     case AstTypeName.REAL:
-                        break;
+                        return true;
                     default:
-                        throw new SemanticException("");
+                        return false;
                 }
 
                 break;
@@ -885,9 +976,9 @@ public class Analyzer
                 switch (type.Name)
                 {
                     case AstTypeName.INTEGER:
-                        break;
+                        return true;
                     default:
-                        throw new SemanticException("");
+                        return false;
                 }
 
                 break;
@@ -895,12 +986,24 @@ public class Analyzer
                 switch (type.Name)
                 {
                     case AstTypeName.BOOL:
-                        break;
+                        return true;
                     default:
-                        throw new SemanticException("");
+                        return false;
                 }
+            default:
+                throw new ArgumentOutOfRangeException(nameof(op));
+        }
+    }
 
-                break;
+    private static Token GetNodeStartToken(PtNode node)
+    {
+        while (true)
+        {
+            if (node is PtTerminal terminal) return terminal.Token;
+
+            var nonTerminal = node as PtNonTerminal;
+
+            node = nonTerminal!.Children[0];
         }
     }
 }
