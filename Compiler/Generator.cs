@@ -2,6 +2,7 @@ namespace Compiler;
 
 public class Generator
 {
+    private const int STRING_MAX_LENGTH = 1024;
     private readonly AstNode _ast;
     private int _varCounter;
     private int _labelCounter;
@@ -35,7 +36,8 @@ public class Generator
         const string output = "#include <stdio.h>\n" +
                               "#include <stdbool.h>\n" +
                               "#include <stdlib.h>\n" +
-                              "#include <assert.h>\n";
+                              "#include <assert.h>\n" +
+                              "#include <string.h>\n";
 
         return output;
     }
@@ -244,6 +246,12 @@ public class Generator
         var indexQueue = new Queue<string>();
         foreach (var variable in read.Variables)
         {
+            if (variable.Type.Name is AstTypeName.STRING)
+            {
+                // Zero string before reading new stuff into it
+                output += $"memset({variable.Identifier},{0},{STRING_MAX_LENGTH});";
+            }
+            
             if (variable is not AstArrayElement arrayElement)
                 continue;
 
@@ -274,10 +282,12 @@ public class Generator
         {
             output += read.Variables[i] switch
             {
-                {Type: AstArrayType} or {Type.Name: AstTypeName.STRING} =>
+                {Type: AstArrayType} =>
                     throw new NotImplementedException(),
                 AstArrayElement arrayElement =>
                     $"&{arrayElement.Identifier}.data[{indexQueue.Dequeue()}]",
+                {Type.Name: AstTypeName.STRING} =>
+                    $"{read.Variables[i].Identifier}",
                 _ => $"&{read.Variables[i].Identifier}",
             };
 
@@ -402,7 +412,7 @@ public class Generator
             output += $"{GetCType(simpleExpression.Type)} {negatedTermName} = -{termName};";
             termName = negatedTermName;
         }
-        
+
         if (simpleExpression.Terms.Count == 0)
             return (output, termName);
 
@@ -493,7 +503,12 @@ public class Generator
         var output = "";
 
         if (type is not AstArrayType arrayType)
+        {
+            if (type.Name is AstTypeName.STRING)
+                return $"char {name}[{STRING_MAX_LENGTH}] = {{}};";
+            
             return $"{GetCType(type)} {name};";
+        }
 
         if (arrayType.Size is null)
             throw new InvalidOperationException();
