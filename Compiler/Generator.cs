@@ -201,11 +201,9 @@ public class Generator
         var endLabel = GetLabelName();
 
         output += $"{startLabel}:\n";
-        output += "{";
         var (expressionOutput, conditionName) = GetExpressionEvaluation(@while.Condition);
         output += expressionOutput;
         output += $"if (!{conditionName}) goto {endLabel};\n";
-        output += "}";
         output += GetStatement(@while.Statement);
         output += $"goto {startLabel};\n";
         output += $"{endLabel}:\n";
