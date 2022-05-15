@@ -291,18 +291,18 @@ public class Scanner
 
         _tokens.Add(Token.Eof);
 
-        // var unknowns = _tokens.Where(token => token.Type == TokenType.UNKNOWN).ToList();
-        //
-        // if (unknowns.Count > 0)
-        // {
-        //     var unknownsStr = "";
-        //     foreach (var token in unknowns)
-        //     {
-        //         unknownsStr += $"Unknown token \"{token.Lexeme}\" at {token.PosString}.\n";
-        //     }
-        //
-        //     throw new ScanningException("Unknown tokens found:\n" + unknownsStr);
-        // }
+        var unknowns = _tokens.Where(token => token.Type == TokenType.UNKNOWN).ToList();
+        
+        if (unknowns.Count > 0)
+        {
+            var unknownsStr = "";
+            foreach (var token in unknowns)
+            {
+                unknownsStr += $"Unknown token \"{token.Lexeme}\" at {token.Line}, {token.Col}.\n";
+            }
+        
+            throw new ScanningException("Unknown tokens found:\n" + unknownsStr);
+        }
 
         return _tokens;
     }
