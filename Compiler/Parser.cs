@@ -600,6 +600,7 @@ public class Parser
         {
             children.Add(ConsumeToTerminal());
             children.Add(ParseExpression());
+            children.Add(ConsumeToTerminal(TokenType.CLOSE_PARENS));
         }
         else if (NextToken.Type is TokenType.KW_NOT)
         {
