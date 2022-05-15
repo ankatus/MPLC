@@ -34,7 +34,8 @@ public class Generator
     {
         const string output = "#include <stdio.h>\n" +
                               "#include <stdbool.h>\n" +
-                              "#include <stdlib.h>\n";
+                              "#include <stdlib.h>\n" +
+                              "#include <assert.h>\n";
 
         return output;
     }
