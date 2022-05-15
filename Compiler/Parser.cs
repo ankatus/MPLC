@@ -169,20 +169,28 @@ public class Parser
     {
         var children = new List<PtNode>();
 
-        do
+        // Empty parameters
+        if (NextToken.Type is not TokenType.KW_VAR and not TokenType.IDENTIFIER)
+            return new PtNonTerminal(NonTerminalType.PARAMETERS, children);
+
+        if (NextToken.Type is TokenType.KW_VAR)
+            children.Add(ConsumeToTerminal());
+        
+        children.Add(ConsumeToTerminal(TokenType.IDENTIFIER));
+        children.Add(ConsumeToTerminal(TokenType.COLON));
+        children.Add(ParseType());
+        
+        while (NextToken.Type is TokenType.COMMA)
         {
+            children.Add(ConsumeToTerminal());
+
             if (NextToken.Type is TokenType.KW_VAR)
                 children.Add(ConsumeToTerminal());
 
             children.Add(ConsumeToTerminal(TokenType.IDENTIFIER));
             children.Add(ConsumeToTerminal(TokenType.COLON));
             children.Add(ParseType());
-
-            if (NextToken.Type is not TokenType.COMMA)
-                break;
-
-            children.Add(ConsumeToTerminal());
-        } while (true);
+        }
 
         var node = new PtNonTerminal(NonTerminalType.PARAMETERS, children);
 
