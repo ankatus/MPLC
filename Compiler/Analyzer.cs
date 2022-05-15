@@ -832,7 +832,7 @@ public class Analyzer
                         null,
                         out var floatValue))
                     throw new InvalidOperationException();
-                return new AstLiteral(new(AstTypeName.INTEGER), floatValue);
+                return new AstLiteral(new(AstTypeName.REAL), floatValue);
             default:
                 throw new InvalidOperationException();
         }
