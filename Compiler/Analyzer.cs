@@ -321,6 +321,13 @@ public class Analyzer
                 .Single(x => x.Type is NonTerminalType.TYPE)
         );
 
+        if (type is AstArrayType {Size: null})
+        {
+            var token = GetNodeStartToken(varDeclarationNode);
+            throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
+                                        $"A declaration of an array type must include a size specifier.");
+        }
+
         var context = _contextStack[^1];
 
         foreach (var id in ids)
@@ -364,7 +371,7 @@ public class Analyzer
             var token = GetNodeStartToken(assignmentNode);
             throw new SemanticException(
                 $"At line {token.Line}, column {token.Col}: " +
-                $"Type mismatch between variable ({variable.Type}) and expression ({expression.Type}) " +
+                $"Type mismatch between variable ({variable.Type.DebugName}) and expression ({expression.Type.DebugName}) " +
                 $"in assignment of variable \"{variable.Identifier}\".");
         }
 

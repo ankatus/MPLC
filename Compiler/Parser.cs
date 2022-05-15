@@ -359,12 +359,28 @@ public class Parser
 
                 return node;
             }
-            case TokenType.KW_ASSIGN:
+            case TokenType.KW_ASSIGN or TokenType.OPEN_SQUARE:
             {
                 // Assignment
-                children.Add(new PtNonTerminal(NonTerminalType.VARIABLE,
+
+                // A horrible last-minute hack to fix assignments to array elements...
+                if (NextToken.Type is TokenType.OPEN_SQUARE)
+                {
+                    children.Add(new PtNonTerminal(
+                        NonTerminalType.VARIABLE,
+                        new List<PtNode>
+                        {
+                            new PtTerminal(token),
+                            ConsumeToTerminal(TokenType.OPEN_SQUARE),
+                            ParseExpression(),
+                            ConsumeToTerminal(TokenType.CLOSE_SQUARE),
+                        }));
+                }
+                else
+                    children.Add(new PtNonTerminal(NonTerminalType.VARIABLE,
                     new List<PtNode> {new PtTerminal(token)}));
-                children.Add(ConsumeToTerminal());
+                
+                children.Add(ConsumeToTerminal(TokenType.KW_ASSIGN));
                 children.Add(ParseExpression());
 
                 var node = new PtNonTerminal(NonTerminalType.ASSIGNMENT, children);

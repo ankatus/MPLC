@@ -351,7 +351,13 @@ public class Generator
         var output = "";
         var (expressionOutput, valueName) = GetExpressionEvaluation(statement.Expression);
         output += expressionOutput;
-        if (statement.Variable.IsRef)
+        if (statement.Variable is AstArrayElement arrayElement)
+        {
+            var (indexOutput, indexValueName) = GetExpressionEvaluation(arrayElement.Index);
+            output += indexOutput;
+            output += $"{arrayElement.Identifier}.data[{indexValueName}] = {valueName};\n";
+        }
+        else if (statement.Variable.IsRef)
             output += $"*{statement.Variable.Identifier} = {valueName};\n";
         else
             output += $"{statement.Variable.Identifier} = {valueName};\n";

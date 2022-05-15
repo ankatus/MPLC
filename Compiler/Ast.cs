@@ -48,6 +48,8 @@ public class AstType : AstNode
 
     public AstTypeName Name { get; }
 
+    public string DebugName => this is AstArrayType ? $"Array of type {Name}" : $"{Name}";
+    
     public static bool operator ==(AstType a, AstType b)
     {
         if (a.Name != b.Name)
@@ -62,14 +64,14 @@ public class AstType : AstNode
         return true;
     }
 
-    public static AstType Int => new(AstTypeName.INTEGER);
-    public static AstType String => new(AstTypeName.STRING);
-    public static AstType Bool => new(AstTypeName.BOOL);
-
     public static bool operator !=(AstType a, AstType b)
     {
         return !(a == b);
     }
+
+    public static AstType Int => new(AstTypeName.INTEGER);
+    public static AstType String => new(AstTypeName.STRING);
+    public static AstType Bool => new(AstTypeName.BOOL);
 }
 
 public class AstArrayType : AstType
@@ -84,7 +86,8 @@ public class AstArrayType : AstType
 
 public class AstProgram : AstNode
 {
-    public AstProgram(AstBlock mainBlock, List<AstFunction> functions, List<AstProcedure> procedures)
+    public AstProgram(AstBlock mainBlock, List<AstFunction> functions,
+        List<AstProcedure> procedures)
     {
         MainBlock = mainBlock;
         Functions = functions;
