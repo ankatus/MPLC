@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Security;
 
 namespace Compiler;
 
@@ -145,7 +144,7 @@ public class Analyzer
             {
                 var token = GetNodeStartToken(functionNode);
                 throw new SemanticException(
-                    $"At line {token.Line}, column {token.Col}: " +
+                    $"At line {token.Line}: " +
                     $"Duplicate parameter name \"{parameter.Name}\" in declaration of function \"{id}\".");
             }
         }
@@ -225,7 +224,7 @@ public class Analyzer
             {
                 var token = GetNodeStartToken(procedureNode);
                 throw new SemanticException(
-                    $"At line {token.Line}, column {token.Col}: " +
+                    $"At line {token.Line}: " +
                     $"Duplicate parameter name \"{parameter.Name}\" in declaration of procedure \"{id}\".");
             }
         }
@@ -430,7 +429,7 @@ public class Analyzer
                 var token = GetNodeStartToken(callStatementNode);
                 throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
                                             $"Invalid argument type in call to \"{id}\". " +
-                                            $"The type of \"{param.Name}\" should be \"{param.Type}\", got \"{arg.Type}\" instead.");
+                                            $"The type of \"{param.Name}\" should be \"{param.Type.DebugName}\", got \"{arg.Type.DebugName}\" instead.");
             }
         }
 
@@ -498,7 +497,7 @@ public class Analyzer
         {
             var token = GetNodeStartToken(assertNode);
             throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
-                                        $"\"Assert\" requires an expression of type \"{AstTypeName.BOOL}\".");
+                                        $"\"Assert\" requires an expression of type \"{AstType.Bool.DebugName}\".");
         }
 
         return new AstAssert(expression);
@@ -573,7 +572,7 @@ public class Analyzer
         {
             var token = GetNodeStartToken(whileNode);
             throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
-                                        $"The condition for a while-loop must be of type \"{AstTypeName.BOOL}\".");
+                                        $"The condition for a while-loop must be of type \"{AstType.Bool.DebugName}\".");
         }
 
         var statement = AnalyzeStatement(
@@ -632,7 +631,7 @@ public class Analyzer
                 {
                     var token = GetNodeStartToken(typeNode);
                     throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
-                                                $"The size expression for an array type must be of type \"{AstTypeName.INTEGER}\".");
+                                                $"The size expression for an array type must be of type \"{AstType.Int.DebugName}\".");
                 }
 
                 return new AstArrayType(type, sizeExpression);
@@ -744,12 +743,9 @@ public class Analyzer
             if (!CheckOperatorType(newOp, newExpr.Type))
             {
                 var token = GetNodeStartToken(simpleExprNode.Children[i]);
-                if (newExpr.Type is AstArrayType)
-                    throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
-                                                $"Operator \"{newOp}\" can not be used with an array type.");
 
                 throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
-                                            $"Operator \"{newOp}\" can not be used with type \"{newExpr.Type.Name}\".");
+                                            $"Operator \"{newOp}\" can not be used with type \"{newExpr.Type.DebugName}\".");
             }
 
             terms.Add((newOp, newExpr));
@@ -853,7 +849,7 @@ public class Analyzer
         {
             var token = GetNodeStartToken(variableNode);
             throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
-                                        $"Array indexer expression should be of type \"{AstTypeName.INTEGER}\".");
+                                        $"Array indexer expression should be of type \"{AstType.Int.DebugName}\".");
         }
 
         return new AstArrayElement(new AstType(foundVar.Value.type.Name), identifier, expression);
@@ -946,7 +942,9 @@ public class Analyzer
             {Type: TokenType.IDENTIFIER, Lexeme: "string"} => AstTypeName.STRING,
             {Type: TokenType.IDENTIFIER, Lexeme: "real"} => AstTypeName.REAL,
             {Type: TokenType.IDENTIFIER, Lexeme: "boolean"} => AstTypeName.BOOL,
-            _ => throw new InvalidOperationException(),
+            _ => throw new SemanticException($"At line {token.Line}, column {token.Col}: " +
+                                             $"Unknown type name \"{token.Lexeme}\", " +
+                                             $"expected one of: \"integer, string, real, boolean\"."),
         };
     }
 
@@ -978,7 +976,6 @@ public class Analyzer
                         return false;
                 }
 
-                break;
             case AstOperator.MOD:
                 switch (type.Name)
                 {
@@ -988,7 +985,6 @@ public class Analyzer
                         return false;
                 }
 
-                break;
             case AstOperator.AND or AstOperator.NOT:
                 switch (type.Name)
                 {
