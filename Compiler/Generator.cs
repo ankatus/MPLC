@@ -395,6 +395,13 @@ public class Generator
 
         var (output, termName) = GetExpressionEvaluation(simpleExpression.Term);
 
+        if (simpleExpression.Sign is AstSign.NEGATIVE)
+        {
+            var negatedTermName = GetVarName();
+            output += $"{GetCType(simpleExpression.Type)} {negatedTermName} = -{termName};";
+            termName = negatedTermName;
+        }
+        
         if (simpleExpression.Terms.Count == 0)
             return (output, termName);
 
@@ -409,6 +416,7 @@ public class Generator
 
         var type = GetCType(simpleExpression.Type);
         var valueName = GetVarName();
+
         output += $"{type} {valueName} = {termName} {operators[0]} {varNames[0]};\n";
 
         for (var i = 1; i < varNames.Count; i++)
