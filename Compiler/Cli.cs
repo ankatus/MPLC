@@ -35,6 +35,10 @@ public static class Cli
 
             Console.WriteLine($"Compiled program saved to {outputPath}");
         }
+        catch (FileNotFoundException e)
+        {
+            Console.WriteLine($"File not found:\n{e.Message}");
+        }
         catch (ScanningException e)
         {
             Console.WriteLine($"Error during scanning:\n{e.Message}");
@@ -46,6 +50,18 @@ public static class Cli
         catch (SemanticException e)
         {
             Console.WriteLine($"Error during semantic analysis:\n{e.Message}");
+        }
+        catch (NotImplementedException e)
+        {
+            Console.WriteLine($"Use of unimplemented feature:\n{e.Message}");
+        }
+        catch (Exception)
+        {
+           Console.WriteLine("Compiler reported an unknown exception (This means a bug was found:()."); 
+        }
+        finally
+        {
+            Environment.Exit(1);
         }
         
     }

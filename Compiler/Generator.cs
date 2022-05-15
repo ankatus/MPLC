@@ -268,7 +268,7 @@ public class Generator
         {
             output += read.Variables[i] switch
             {
-                {Type: AstArrayType} => throw new NotImplementedException(),
+                {Type: AstArrayType} => throw new NotImplementedException("Reading into an array type is not supported."),
                 {Type.Name: AstTypeName.INTEGER or AstTypeName.BOOL} => "%d",
                 {Type.Name: AstTypeName.REAL} => "%f",
                 {Type.Name: AstTypeName.STRING} => "%s",
@@ -283,7 +283,7 @@ public class Generator
             output += read.Variables[i] switch
             {
                 {Type: AstArrayType} =>
-                    throw new NotImplementedException(),
+                    throw new NotImplementedException("Reading into an array type is not supported."),
                 AstArrayElement arrayElement =>
                     $"&{arrayElement.Identifier}.data[{indexQueue.Dequeue()}]",
                 {Type.Name: AstTypeName.STRING} =>
@@ -318,7 +318,7 @@ public class Generator
         {
             output += arg.Type switch
             {
-                AstArrayType => throw new NotImplementedException(),
+                AstArrayType => throw new NotImplementedException("Printing an array type is not supported."),
                 {Name: AstTypeName.STRING} => "%s",
                 {Name: AstTypeName.REAL} => "%f",
                 {Name: AstTypeName.INTEGER or AstTypeName.BOOL} => "%d",
@@ -332,7 +332,7 @@ public class Generator
         {
             output += write.Arguments[i].Type switch
             {
-                AstArrayType => throw new NotImplementedException(),
+                AstArrayType => throw new NotImplementedException("Printing an array type is not supported."),
                 _ => varNames[i],
             };
 
@@ -574,7 +574,7 @@ public class Generator
             {Name: AstTypeName.INTEGER} => "int",
             {Name: AstTypeName.REAL} => "float",
             {Name: AstTypeName.BOOL} => "bool",
-            {Name: AstTypeName.STRING} => throw new NotImplementedException(),
+            {Name: AstTypeName.STRING} => throw new InvalidOperationException(),
             _ => throw new ArgumentOutOfRangeException(nameof(type)),
         };
     }
