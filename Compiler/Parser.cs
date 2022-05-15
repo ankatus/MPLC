@@ -91,7 +91,8 @@ public class Parser
             {
                 {Type: TokenType.KW_PROCEDURE} => ParseProcedure(),
                 {Type: TokenType.KW_FUNCTION} => ParseFunction(),
-                _ => throw new ParseException(""),
+                _ => throw new ParseException(GetExceptionMessage(NextToken, TokenType.KW_PROCEDURE,
+                    TokenType.KW_FUNCTION)),
             });
         }
 
@@ -175,11 +176,11 @@ public class Parser
 
         if (NextToken.Type is TokenType.KW_VAR)
             children.Add(ConsumeToTerminal());
-        
+
         children.Add(ConsumeToTerminal(TokenType.IDENTIFIER));
         children.Add(ConsumeToTerminal(TokenType.COLON));
         children.Add(ParseType());
-        
+
         while (NextToken.Type is TokenType.COMMA)
         {
             children.Add(ConsumeToTerminal());
@@ -252,10 +253,10 @@ public class Parser
         while (NextToken.Type is not TokenType.KW_END)
         {
             children.Add(ConsumeToTerminal(TokenType.SEMICOLON));
-            
+
             if (NextToken.Type is TokenType.KW_END)
                 break;
-            
+
             children.Add(ParseStatement());
         }
 
@@ -281,7 +282,15 @@ public class Parser
                 {Type: TokenType.KW_IF} => ParseStructuredStatement(),
                 {Type: TokenType.KW_BEGIN} => ParseStructuredStatement(),
                 {Type: TokenType.KW_WHILE} => ParseStructuredStatement(),
-                _ => throw new ParseException(""),
+                _ => throw new ParseException(GetExceptionMessage(NextToken,
+                    TokenType.IDENTIFIER,
+                    TokenType.KW_VAR,
+                    TokenType.KW_ASSERT,
+                    TokenType.KW_RETURN,
+                    TokenType.KW_IF,
+                    TokenType.KW_BEGIN,
+                    TokenType.KW_WHILE
+                )),
             },
         };
 
@@ -320,7 +329,7 @@ public class Parser
                 {Type: TokenType.KW_IF} => ParseIf(),
                 {Type: TokenType.KW_BEGIN} => ParseBlock(),
                 {Type: TokenType.KW_WHILE} => ParseWhile(),
-                _ => throw new ParseException(""),
+                _ => throw new InvalidOperationException(),
             },
         };
 
@@ -362,7 +371,10 @@ public class Parser
                 return node;
             }
             default:
-                throw new ParseException("");
+                throw new ParseException(GetExceptionMessage(NextToken,
+                    TokenType.OPEN_PARENS,
+                    TokenType.KW_ASSIGN
+                ));
         }
     }
 
@@ -644,7 +656,8 @@ public class Parser
 
     private PtNode ParseLiteral()
     {
-        if (NextToken.Type is TokenType.INTEGER or TokenType.STRING or TokenType.REAL or TokenType.KW_TRUE or TokenType.KW_FALSE)
+        if (NextToken.Type is TokenType.INTEGER or TokenType.STRING or TokenType.REAL
+            or TokenType.KW_TRUE or TokenType.KW_FALSE)
         {
             return new PtNonTerminal(NonTerminalType.LITERAL, new List<PtNode>
             {
@@ -652,7 +665,7 @@ public class Parser
             });
         }
 
-        throw new ParseException("");
+        throw new InvalidOperationException();
     }
 
     private Token Consume()
@@ -676,10 +689,10 @@ public class Parser
     private PtTerminal ConsumeToTerminal(TokenType type, string lexeme) =>
         new(Consume(type, lexeme));
 
-    private static string GetExceptionMessage(Token token, TokenType expectedType)
+    private static string GetExceptionMessage(Token token, params TokenType[] expectedTypes)
     {
         var message =
-            $"At line {token.Line}, col {token.Col}: expected {expectedType}, found {token.Type}.";
+            $"At line {token.Line}, col {token.Col}: expected one of: \"{string.Join(", ", expectedTypes)}\", found {token.Type}.";
         return message;
     }
 
@@ -706,7 +719,8 @@ public class Parser
 
     private static bool IsLiteralStartToken(Token token)
     {
-        return token.Type is TokenType.INTEGER or TokenType.STRING or TokenType.REAL or TokenType.KW_FALSE or TokenType.KW_TRUE;
+        return token.Type is TokenType.INTEGER or TokenType.STRING or TokenType.REAL
+            or TokenType.KW_FALSE or TokenType.KW_TRUE;
     }
 
     private static bool IsVariableStartToken(Token token)

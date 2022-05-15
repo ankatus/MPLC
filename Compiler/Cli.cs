@@ -37,7 +37,11 @@ public static class Cli
         }
         catch (ScanningException e)
         {
-            Console.WriteLine($"Error during scanning:\n{e.Message}");    
+            Console.WriteLine($"Error during scanning:\n{e.Message}");
+        }
+        catch (ParseException e)
+        {
+            Console.WriteLine($"Error during parsing:\n{e.Message}");
         }
         
         
